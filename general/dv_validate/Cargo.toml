@@ -1,0 +1,30 @@
+[package]
+name = "dv_validate"
+version = "0.1.0"
+edition.workspace = true
+publish.workspace = true
+repository.workspace = true
+license.workspace = true
+
+[dependencies]
+wdk.workspace = true
+wdk-alloc.workspace = true
+wdk-panic.workspace = true
+wdk-sys.workspace = true
+
+[build-dependencies]
+wdk-build.workspace = true
+
+[lib]
+crate-type = ["cdylib"]
+
+[package.metadata.wdk]
+
+[profile.dev]
+panic = "abort"
+lto = true # optional setting to enable Link Time Optimizations
+
+[profile.release]
+panic = "abort"
+lto = true # optional setting to enable Link Time Optimizations
+

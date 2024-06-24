@@ -1,0 +1,37 @@
+[Version]
+Signature="$WINDOWS NT$"
+Class=System
+ClassGuid={4D36E97D-E325-11CE-BFC1-08002BE10318}
+Provider=%Manufacturer%
+DriverVer=%DriverVersion%
+CatalogFile=dv_validate.cat
+
+[DestinationDirs]
+DefaultDestDir = 12
+
+[SourceDisksNames]
+1 = %DiskName%,,,""
+
+[SourceDisksFiles]
+dv_validate.sys = 1
+
+[Manufacturer]
+%Manufacturer% = ManufacturerSection, NTx86, NTamd64
+
+[ManufacturerSection.NTx86]
+%DeviceName% = InstallSection, PCI\VEN_1234&DEV_5678
+
+[ManufacturerSection.NTamd64]
+%DeviceName% = InstallSection, PCI\VEN_1234&DEV_5678
+
+[InstallSection]
+CopyFiles = DriverFiles
+
+[DriverFiles]
+dv_validate.sys
+
+[Strings]
+Manufacturer="My Manufacturer"
+DeviceName="My Device"
+DriverVersion="1.0"
+DiskName="My Driver Installation Disk"
