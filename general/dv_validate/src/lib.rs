@@ -7,6 +7,7 @@
 #![allow(clippy::missing_safety_doc)]
 
 mod driver;
+mod pnp_power_callbacks;
 
 #[cfg(not(test))]
 extern crate wdk_panic;
