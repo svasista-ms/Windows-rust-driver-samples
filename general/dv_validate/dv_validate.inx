@@ -2,36 +2,52 @@
 Signature="$WINDOWS NT$"
 Class=System
 ClassGuid={4D36E97D-E325-11CE-BFC1-08002BE10318}
-Provider=%Manufacturer%
+Provider=%ProviderString%
 DriverVer=%DriverVersion%
 CatalogFile=dv_validate.cat
+PnpLockDown=1 
 
 [DestinationDirs]
-DefaultDestDir = 12
+DefaultDestDir = 13
 
 [SourceDisksNames]
-1 = %DiskName%,,,""
+1 = %DiskId1%,,,""
 
 [SourceDisksFiles]
-dv_validate.sys = 1
+dv_validate.sys = 1,,
+
+; ================= Install section =================
 
 [Manufacturer]
-%Manufacturer% = ManufacturerSection, NTx86, NTamd64
+%StdMfg%=Standard,NT$ARCH$.10.0...16299
 
-[ManufacturerSection.NTx86]
-%DeviceName% = InstallSection, PCI\VEN_1234&DEV_5678
+[Standard.NT$ARCH$.10.0...16299]
+%DVV.DeviceDesc%=dvv_driver, root\dvv_driver
 
-[ManufacturerSection.NTamd64]
-%DeviceName% = InstallSection, PCI\VEN_1234&DEV_5678
+[dvv_driver.NT$ARCH$]
+CopyFiles=Drivers_Dir
 
-[InstallSection]
-CopyFiles = DriverFiles
-
-[DriverFiles]
+[Drivers_Dir]
 dv_validate.sys
 
+; ================= Service installation =================
+
+[dvv_driver.NT$ARCH$.Services]
+AddService = dvv_driver_svc, %SPSVCINST_ASSOCSERVICE%, DVV_SVC_INS
+
+[DVV_SVC_INS]
+DisplayName    = %DVV.SVCDESC%
+ServiceType    = 1                  ; SERVICE_KERNEL_DRIVER
+StartType      = 3                  ; SERVICE_DEMAND_START
+ErrorControl   = 1                  ; SERVICE_ERROR_NORMAL
+ServiceBinary  = %13%\dv_validate.sys
+
+; ================= Strings =================
+
 [Strings]
-Manufacturer="My Manufacturer"
-DeviceName="My Device"
-DriverVersion="1.0"
-DiskName="My Driver Installation Disk"
+SPSVCINST_ASSOCSERVICE = 0x00000002
+ProviderString         = "TODO Set Provider String"
+StdMfg                 = "(Standard system devices)"
+DiskId1                = "Sample DVV Driver Installation Disk #1"
+DVV.DeviceDesc         = "Sample driver for Driver Verifier Validation"
+DVV.SVCDESC            = "Rust Driver Verifier Validation Driver"
