@@ -58,14 +58,14 @@ extern "system" fn driver_entry(driver: &mut DRIVER_OBJECT, registry_path: PCUNI
 
     // println!("Driver Object: {:?}", driver);
 
-    let registry_path: *mut u16 = unsafe {
-        macros::call_unsafe_wdf_function_binding!(
-            WdfDriverGetRegistryPath,
-            *driver_handle_output
-        )
-    };
+    // let registry_path: *mut u16 = unsafe {
+    //     macros::call_unsafe_wdf_function_binding!(
+    //         WdfDriverGetRegistryPath,
+    //         *driver_handle_output
+    //     )
+    // };
 
-    println!("Registry Path: {:?}", registry_path);
+    // println!("Registry Path: {:?}", registry_path);
 
     println!("Exit: DriverEntry Routine");
 
