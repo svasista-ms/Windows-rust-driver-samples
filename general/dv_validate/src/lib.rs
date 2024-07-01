@@ -7,13 +7,14 @@
 #![allow(clippy::missing_safety_doc)]
 
 mod driver;
+mod device;
 mod pnp_power_callbacks;
+use wdk_alloc::WDKAllocator;
+#[cfg(not(test))]
+#[global_allocator]
+static GLOBAL_ALLOCATOR: WDKAllocator = WDKAllocator;
 
 #[cfg(not(test))]
 extern crate wdk_panic;
 
-use wdk_alloc::WDKAllocator;
 
-#[cfg(not(test))]
-#[global_allocator]
-static GLOBAL_ALLOCATOR: WDKAllocator = WDKAllocator;

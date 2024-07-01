@@ -1,36 +1,19 @@
-use wdk::{nt_success, println, paged_code};
+use wdk::{nt_success, println};
 
 use wdk_sys::{
-    ntddk::KeGetCurrentIrql,
-    GUID,
     macros, 
     DRIVER_OBJECT, 
     NTSTATUS, 
-    PCUNICODE_STRING, 
+    PCUNICODE_STRING,
     PDRIVER_OBJECT, 
-    PWDFDEVICE_INIT, 
     ULONG,
     WDFDRIVER, 
     WDF_DRIVER_CONFIG, 
-    WDF_NO_HANDLE, 
-    WDF_NO_OBJECT_ATTRIBUTES, 
-    APC_LEVEL,
-    WDF_PNPPOWER_EVENT_CALLBACKS,
-    WDFDEVICE,
-    WDFDEVICE_INIT,
-    WDF_OBJECT_ATTRIBUTES,
-    _WDF_EXECUTION_LEVEL,
-    _WDF_SYNCHRONIZATION_SCOPE,
+    WDF_NO_OBJECT_ATTRIBUTES,
+    WDF_NO_HANDLE 
 };
 
-const GUID_DEVINTERFACE: GUID = GUID {
-    Data1: 0xCDC3_5B6A,
-    Data2: 0x0BE5,
-    Data3: 0x4934,
-    Data4: [0xBA, 0x5C, 0x55, 0x37, 0x38, 0x0A, 0x7C, 0x1A],
-};
-
-use crate::pnp_power_callbacks::*;
+use crate::device::*;
 
 #[link_section = "INIT"]
 #[export_name = "DriverEntry"] // WDF expects a symbol with the name DriverEntry
@@ -65,97 +48,26 @@ extern "system" fn driver_entry(driver: &mut DRIVER_OBJECT, registry_path: PCUNI
         return nt_status;
     }
 
-    // print_driver_version();
+    // todo(print_driver_version())
+
+    // let driver_object: WDFDRIVER = unsafe {
+    //     macros::call_unsafe_wdf_function_binding!(
+    //         WdfGetDriver,
+    //     )
+    // };
+
+    // println!("Driver Object: {:?}", driver);
+
+    let registry_path: *mut u16 = unsafe {
+        macros::call_unsafe_wdf_function_binding!(
+            WdfDriverGetRegistryPath,
+            *driver_handle_output
+        )
+    };
+
+    println!("Registry Path: {:?}", registry_path);
 
     println!("Exit: DriverEntry Routine");
-
-    nt_status
-
-
-}
-
-// Device/Driver lifecycle callbacks
-// EvtDeviceAdd - Called by the framework in response to AddDevice call from the PnP manager.
-extern "C" fn evt_device_add(_driver: WDFDRIVER, device_init: PWDFDEVICE_INIT) -> NTSTATUS {
-    paged_code!();
-
-    println!("Enter: EvtDeviceAdd");
-
-    let mut device_init = unsafe {
-        device_init.as_mut().expect("device_init is null. WDF should never provide a null pointer for device_init")
-    };
-
-    // Setup pnp/power callbacks
-
-    let mut pnp_power_event_callbacks = WDF_PNPPOWER_EVENT_CALLBACKS {
-        Size: core::mem::size_of::<WDF_PNPPOWER_EVENT_CALLBACKS>() as ULONG,
-        EvtDeviceD0Entry: Some(evt_device_d0_entry),
-        EvtDeviceD0Exit: Some(evt_device_d0_exit),
-        EvtDeviceD0EntryPostInterruptsEnabled: Some(evt_device_d0_entry_post_interrupts_enabled),
-        EvtDeviceD0ExitPreInterruptsDisabled: Some(evt_device_d0_exit_pre_interrupts_disabled),
-        EvtDevicePrepareHardware: Some(evt_device_prepare_hardware),
-        EvtDeviceReleaseHardware: Some(evt_device_release_hardware),
-        EvtDeviceSelfManagedIoCleanup: Some(evt_device_self_managed_io_cleanup),
-        EvtDeviceSelfManagedIoFlush: Some(evt_device_self_managed_io_flush),
-        EvtDeviceSelfManagedIoInit: Some(evt_device_self_managed_io_start),
-        EvtDeviceSelfManagedIoSuspend: Some(evt_device_self_managed_io_suspend),
-        EvtDeviceSelfManagedIoRestart: Some(evt_device_self_managed_io_start),
-        EvtDeviceSurpriseRemoval: Some(evt_device_surprise_removal),
-        EvtDeviceQueryRemove: Some(evt_device_query_remove),
-        EvtDeviceQueryStop: Some(evt_device_query_stop),
-        EvtDeviceUsageNotification: Some(evt_device_usage_notification),
-        EvtDeviceRelationsQuery: Some(evt_device_relations_query),
-        EvtDeviceUsageNotificationEx: Some(evt_device_usage_notification_ex),
-    };
-
-    // Call WdfDeviceInitSetPnpPowerEventCallbacks and register the pnp/power callbacks
-
-    let _ = unsafe {
-        macros::call_unsafe_wdf_function_binding!(
-            WdfDeviceInitSetPnpPowerEventCallbacks,
-            device_init,
-            &mut pnp_power_event_callbacks
-        )
-    };
-
-    // todo!("WdfDeviceInitSetRequestAttributes");
-
-    let mut wdfdevice_object_attributes = WDF_OBJECT_ATTRIBUTES {
-        Size: core::mem::size_of::<WDF_OBJECT_ATTRIBUTES>() as ULONG,
-        ExecutionLevel: _WDF_EXECUTION_LEVEL::WdfExecutionLevelInheritFromParent,
-        SynchronizationScope: _WDF_SYNCHRONIZATION_SCOPE::WdfSynchronizationScopeInheritFromParent,
-        ..WDF_OBJECT_ATTRIBUTES::default()
-    };
-
-    let mut device = WDF_NO_HANDLE as WDFDEVICE;
-    let mut nt_status = unsafe {
-        macros::call_unsafe_wdf_function_binding!(
-            WdfDeviceCreate,
-            (core::ptr::addr_of_mut!(device_init)) as *mut *mut WDFDEVICE_INIT,
-            &mut wdfdevice_object_attributes,
-            &mut device,
-        )
-    };
-
-    if nt_success(nt_status) {
-        nt_status = unsafe {
-            macros::call_unsafe_wdf_function_binding!(
-                WdfDeviceCreateDeviceInterface,
-                device,
-                &GUID_DEVINTERFACE,
-                core::ptr::null_mut(),
-            )
-        };
-        if nt_success(nt_status) {
-            // Initialize the I/O Package and any Queues
-            // nt_status = unsafe { echo_queue_initialize(device) };
-            println!("Initialize the I/O Package and any Queues");
-        }
-    } else {
-        // todo!("WdfDeviceCreate failed");
-    }
-
-    println!("Exit EvtDeviceAdd");
 
     nt_status
 }
