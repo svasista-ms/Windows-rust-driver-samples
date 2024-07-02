@@ -5,8 +5,8 @@ use wdk_sys::{
     GUID,
     WDFDRIVER,
     ntddk::KeGetCurrentIrql,
-    // UNICODE_STRING,
-    // WCHAR,
+    UNICODE_STRING,
+    WCHAR,
     PWDFDEVICE_INIT,
     APC_LEVEL,
     WDF_PNPPOWER_EVENT_CALLBACKS,
@@ -22,20 +22,20 @@ use wdk::{nt_success, println, paged_code};
 
 use crate::pnp_power_callbacks::*;
 
-// const DEVICE_NAME_BUFFER: [WCHAR; 17] = [
-//     '\\' as WCHAR, 'D' as WCHAR, 'e' as WCHAR, 'v' as WCHAR, 'i' as WCHAR, 'c' as WCHAR, 'e' as WCHAR,
-//     '\\' as WCHAR, 'V' as WCHAR, 'a' as WCHAR, 'l' as WCHAR, 'i' as WCHAR, 'd' as WCHAR, 'a' as WCHAR, 't' as WCHAR, 'e' as WCHAR, 
-//     0,
-// ];
+const DEVICE_NAME_BUFFER: [WCHAR; 17] = [
+    '\\' as WCHAR, 'D' as WCHAR, 'e' as WCHAR, 'v' as WCHAR, 'i' as WCHAR, 'c' as WCHAR, 'e' as WCHAR,
+    '\\' as WCHAR, 'V' as WCHAR, 'a' as WCHAR, 'l' as WCHAR, 'i' as WCHAR, 'd' as WCHAR, 'a' as WCHAR, 't' as WCHAR, 'e' as WCHAR, 
+    0,
+];
 
 // // Define a static UNICODE_STRING for "\\Device\\Validate".
 // // Length is the length of the string in bytes, not including the null terminator.
 // // MaximumLength includes the null terminator.
-// const DEVICE_NAME: UNICODE_STRING = UNICODE_STRING {
-//     Length: (16 * 2) as u16, // Length in bytes of the string content, excluding null terminator
-//     MaximumLength: (17 * 2) as u16, // Maximum length in bytes, including null terminator
-//     Buffer: DEVICE_NAME_BUFFER.as_ptr() as *mut WCHAR,
-// };
+const DEVICE_NAME: UNICODE_STRING = UNICODE_STRING {
+    Length: (16 * 2) as u16, // Length in bytes of the string content, excluding null terminator
+    MaximumLength: (17 * 2) as u16, // Maximum length in bytes, including null terminator
+    Buffer: DEVICE_NAME_BUFFER.as_ptr() as *mut WCHAR,
+};
 
 const GUID_DEVINTERFACE: GUID = GUID {
     Data1: 0xA1B2_C3D4u32,
@@ -59,13 +59,13 @@ pub extern "C" fn evt_device_add(_driver: WDFDRIVER, device_init: PWDFDEVICE_INI
 
     // WdfDeviceInitAssignName method assigns a device name to a device's device object.
     
-    // let _nt_status = unsafe {
-    //     macros::call_unsafe_wdf_function_binding!(
-    //         WdfDeviceInitAssignName,
-    //         device_init,
-    //         &DEVICE_NAME
-    //     )
-    // };
+    let _nt_status = unsafe {
+        macros::call_unsafe_wdf_function_binding!(
+            WdfDeviceInitAssignName,
+            device_init,
+            &DEVICE_NAME
+        )
+    };
 
     // Setup pnp/power callbacks
 

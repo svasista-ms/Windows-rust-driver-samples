@@ -2,15 +2,16 @@ use wdk::{nt_success, println};
 
 use wdk_sys::{
     macros, 
+    WDFSTRING,
     DRIVER_OBJECT, 
     NTSTATUS, 
-    PCUNICODE_STRING,
+    PCUNICODE_STRING, 
     PDRIVER_OBJECT, 
-    ULONG,
+    ULONG, 
     WDFDRIVER, 
     WDF_DRIVER_CONFIG, 
-    WDF_NO_OBJECT_ATTRIBUTES,
-    WDF_NO_HANDLE 
+    WDF_NO_HANDLE, 
+    WDF_NO_OBJECT_ATTRIBUTES 
 };
 
 use crate::device::*;
@@ -32,7 +33,7 @@ extern "system" fn driver_entry(driver: &mut DRIVER_OBJECT, registry_path: PCUNI
 
     let driver_handle_output = WDF_NO_HANDLE.cast::<WDFDRIVER>();
 
-    let nt_status = unsafe {
+    let mut nt_status = unsafe {
         macros::call_unsafe_wdf_function_binding!(
             WdfDriverCreate,
             driver as PDRIVER_OBJECT,
@@ -48,24 +49,32 @@ extern "system" fn driver_entry(driver: &mut DRIVER_OBJECT, registry_path: PCUNI
         return nt_status;
     }
 
-    // todo(print_driver_version())
+    let version_string: WDFSTRING = core::ptr::null_mut();
+    nt_status = unsafe {
+        macros::call_unsafe_wdf_function_binding!(
+            WdfDriverRetrieveVersionString,
+            *driver_handle_output,
+            version_string,
+        )
+    };
 
-    // let driver_object: WDFDRIVER = unsafe {
-    //     macros::call_unsafe_wdf_function_binding!(
-    //         WdfGetDriver,
-    //     )
-    // };
+    if !nt_success(nt_status) {
+        println!("Error: WdfDriverRetrieveVersionString failed {nt_status:#010X}");
+        return nt_status;
+    }
+
+    println!("Driver Version: {:?}", version_string);
 
     // println!("Driver Object: {:?}", driver);
 
-    // let registry_path: *mut u16 = unsafe {
-    //     macros::call_unsafe_wdf_function_binding!(
-    //         WdfDriverGetRegistryPath,
-    //         *driver_handle_output
-    //     )
-    // };
+    let registry_path: *mut u16 = unsafe {
+        macros::call_unsafe_wdf_function_binding!(
+            WdfDriverGetRegistryPath,
+            *driver_handle_output
+        )
+    };
 
-    // println!("Registry Path: {:?}", registry_path);
+    println!("Registry Path: {:?}", registry_path);
 
     println!("Exit: DriverEntry Routine");
 
