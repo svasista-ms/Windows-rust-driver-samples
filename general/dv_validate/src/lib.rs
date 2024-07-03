@@ -9,10 +9,10 @@
 mod driver;
 mod device;
 mod pnp_power_callbacks;
-use wdk_alloc::WDKAllocator;
+
 #[cfg(not(test))]
 #[global_allocator]
-static GLOBAL_ALLOCATOR: WDKAllocator = WDKAllocator;
+static GLOBAL_ALLOCATOR: wdk_alloc::WDKAllocator = wdk_alloc::WDKAllocator;
 
 #[cfg(not(test))]
 extern crate wdk_panic;
