@@ -1,7 +1,7 @@
 use wdk::{nt_success, println};
 
 use wdk_sys::{
-    macros, DRIVER_OBJECT, NTSTATUS, PCUNICODE_STRING, ULONG, UNICODE_STRING, WDFDRIVER, WDFSTRING, WDF_DRIVER_CONFIG, WDF_NO_HANDLE, WDF_NO_OBJECT_ATTRIBUTES 
+    macros, DRIVER_OBJECT, NTSTATUS, PCUNICODE_STRING, ULONG, UNICODE_STRING, WDFDRIVER, WDFOBJECT, WDFSTRING, WDF_DRIVER_CONFIG, WDF_DRIVER_VERSION_AVAILABLE_PARAMS, WDF_NO_HANDLE, WDF_NO_OBJECT_ATTRIBUTES, _UNICODE_STRING, _WDF_DRIVER_VERSION_AVAILABLE_PARAMS 
 };
 
 use crate::device::*;
@@ -10,44 +10,29 @@ extern crate alloc;
 
 use alloc::string::String;
 
-
-pub struct Driver<'a> {
-    driver: &'a mut DRIVER_OBJECT,
-    registry_path: PCUNICODE_STRING,
-    driver_handle: *mut WDFDRIVER,
-    driver_config: WDF_DRIVER_CONFIG,
-    driver_version: String,
-}
-
 #[link_section = "INIT"]
 #[export_name = "DriverEntry"] // WDF expects a symbol with the name DriverEntry
 extern "system" fn driver_entry(driver: &mut DRIVER_OBJECT, registry_path: PCUNICODE_STRING) -> NTSTATUS {
 
     println!("Enter: DriverEntry Routine");
 
-    let mut driver_object = Driver {
-        driver,
-        registry_path,
-        driver_handle: WDF_NO_HANDLE.cast::<WDFDRIVER>(),
-        driver_config: WDF_DRIVER_CONFIG {
-            Size: core::mem::size_of::<WDF_DRIVER_CONFIG>() as ULONG,
-            EvtDriverDeviceAdd: Some(evt_device_add),
-            EvtDriverUnload: Some(evt_driver_unload),
-            // DriverInitFlags: 0x0,
-            // DriverPoolTag: 0x546C_6C65, // "Tlle"
-            ..WDF_DRIVER_CONFIG::default()
-        },
-        driver_version: String::new(),
+    let mut driver_config = WDF_DRIVER_CONFIG {
+        Size: core::mem::size_of::<WDF_DRIVER_CONFIG>() as ULONG,
+        EvtDriverDeviceAdd: Some(evt_device_add),
+        EvtDriverUnload: Some(evt_driver_unload),
+        ..WDF_DRIVER_CONFIG::default()
     };
 
-    let nt_status = unsafe {
+    let driver_handle_output = WDF_NO_HANDLE.cast::<WDFDRIVER>();
+
+    let mut nt_status = unsafe {
         macros::call_unsafe_wdf_function_binding!(
             WdfDriverCreate,
-            driver_object.driver,
+            driver,
             registry_path,
             WDF_NO_OBJECT_ATTRIBUTES,
-            &mut driver_object.driver_config,
-            driver_object.driver_handle,
+            &mut driver_config,
+            driver_handle_output,
         )
     };
 
@@ -56,26 +41,24 @@ extern "system" fn driver_entry(driver: &mut DRIVER_OBJECT, registry_path: PCUNI
         return nt_status;
     }
 
-    // set_driver_version(&mut driver_object);
+    // nt_status = print_driver_version();
 
-    // println!("Driver Version: {:?}", driver_object.driver_version);
+    // if !nt_success(nt_status) {
+    //     println!("Error: print_driver_version failed {nt_status:#010X}");
+    //     return nt_status;
+    // }
 
-    // println!("Driver Registry Path: {:?}", driver_object.registry_path);
+    // println!("Driver Registry Path: {:?}", crate::utils::print_punicode_string(registry_path as *mut _UNICODE_STRING));
 
     println!("Exit: DriverEntry Routine");
 
     nt_status
 }
 
-extern "C" fn evt_driver_unload(_driver: WDFDRIVER) {
-    println!("Enter: EvtDriverUnload");
 
-    println!("Exit: EvtDriverUnload");
-}
-
-fn set_driver_version(driver_object: &mut Driver) -> NTSTATUS {
-    println!("Enter: set_driver_version");
-
+fn print_driver_version() -> NTSTATUS {
+    println!("Enter: print_driver_version");
+    
     let mut string: WDFSTRING = core::ptr::null_mut();
     let mut us: UNICODE_STRING = UNICODE_STRING::default();
     let mut nt_status: i32 = unsafe {
@@ -86,26 +69,28 @@ fn set_driver_version(driver_object: &mut Driver) -> NTSTATUS {
             &mut string
         )
     };
-
+    
     if !nt_success(nt_status) {
         println!("Error: WdfStringCreate failed {nt_status:#010X}");
         return nt_status;
     }
 
+    let driver = unsafe { (*wdk_sys::WdfDriverGlobals).Driver };
+
     nt_status = unsafe {
         macros::call_unsafe_wdf_function_binding!(
             WdfDriverRetrieveVersionString,
-            *driver_object.driver_handle,
+            driver,
             string
         )
     };
-
+    
     if !nt_success(nt_status) {
         println!("Error: WdfDriverRetrieveVersionString failed {nt_status:#010X}");
         return nt_status;
     }
     
-    let _ = unsafe {
+    let () = unsafe {
         macros::call_unsafe_wdf_function_binding!(
             WdfStringGetUnicodeString,
             string,
@@ -113,14 +98,50 @@ fn set_driver_version(driver_object: &mut Driver) -> NTSTATUS {
         )
     };
 
-    driver_object.driver_version = String::from_utf16_lossy(unsafe {
+    let driver_version = String::from_utf16_lossy(unsafe {
         core::slice::from_raw_parts(
             us.Buffer,
             us.Length as usize / core::mem::size_of_val(&(*us.Buffer)),
         )
     });
 
-    println!("Exit: set_driver_version");
+    println!("Driver Version: {}", driver_version);
 
+    let () = unsafe {
+        macros::call_unsafe_wdf_function_binding!(
+            WdfObjectDelete,
+            string as WDFOBJECT
+        )
+    };
+
+    let mut ver: _WDF_DRIVER_VERSION_AVAILABLE_PARAMS = WDF_DRIVER_VERSION_AVAILABLE_PARAMS {
+        Size: core::mem::size_of::<WDF_DRIVER_VERSION_AVAILABLE_PARAMS>() as ULONG,
+        MajorVersion: 1,
+        MinorVersion: 0,
+    };
+
+    let res = unsafe {
+        macros::call_unsafe_wdf_function_binding!(
+            WdfDriverIsVersionAvailable,
+            driver,
+            &mut ver
+        )
+    };
+
+    if res > 0 {
+        println!("Yes, framework version is 1.0");
+    } else {
+        println!("No, framework version is not 1.0");
+    }
+
+    println!("Exit: print_driver_version");
+    
     nt_status
+}
+    
+    
+extern "C" fn evt_driver_unload(_driver: WDFDRIVER) {
+    println!("Enter: EvtDriverUnload");
+
+    println!("Exit: EvtDriverUnload");
 }
