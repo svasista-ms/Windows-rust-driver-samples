@@ -43,6 +43,125 @@ These are not-required, but may make it easier to work in a rust environment:
 
 `cargo install cargo-expand cargo-edit cargo-workspaces`
 
+#### Creating a new Driver Project
+
+1. Create a new Cargo package with a lib crate:
+
+   ```pwsh
+   cargo new <driver_name> --lib
+   ```
+  
+  Cargo creates a library package and adds it as a member of the workspace
+
+2. Add dependencies on `windows-drivers-rs` crates:
+
+   ```pwsh
+   cd <driver_name>
+   cargo add --build wdk-build
+   cargo add wdk wdk-sys wdk-alloc wdk-panic
+   ```
+
+3. Set the crate type to `cdylib` by adding the following snippet to `Cargo.toml`:
+
+   ```toml
+   [lib]
+   crate-type = ["cdylib"]
+   ```
+
+4. Mark the crate as a driver with a wdk metadata section. This lets the cargo-make tasks know that the package is a driver and that the driver packaging steps need to run.
+
+   ```toml
+   [package.metadata.wdk]
+   ```
+
+5. Set crate panic strategy to `abort` in `Cargo.toml`:
+
+   ```toml
+   [profile.dev]
+   panic = "abort"
+   lto = true # optional setting to enable Link Time Optimizations
+
+   [profile.release]
+   panic = "abort"
+   lto = true # optional setting to enable Link Time Optimizations
+   ```
+
+6. Create a `build.rs` and add the following snippet:
+
+   ```rust
+   fn main() -> Result<(), wdk_build::ConfigError> {
+      wdk_build::Config::from_env_auto()?.configure_binary_build();
+      Ok(())
+   }
+   ```
+
+7. Mark your driver crate as `no_std` in `lib.rs`:
+
+   ```rust
+   #![no_std]
+   ```
+
+8. Add a panic handler in `lib.rs`:
+
+   ```rust
+   #[cfg(not(test))]
+   extern crate wdk_panic;
+
+   ```
+
+9. Optional: Add a global allocator in `lib.rs`:
+
+   ```rust
+   #[cfg(not(test))]
+   use wdk_alloc::WDKAllocator;
+
+   #[cfg(not(test))]
+   #[global_allocator]
+   static GLOBAL_ALLOCATOR: WDKAllocator = WDKAllocator;
+   ```
+
+   This is only required if you want to be able to use the [`alloc` modules](https://doc.rust-lang.org/alloc/) in the rust standard library. You are also free to use your own implementations of global allocators.
+
+10. Add a DriverEntry in `lib.rs`:
+
+   ```rust
+   use wdk_sys::{
+      DRIVER_OBJECT,
+      NTSTATUS,
+      PCUNICODE_STRING,
+   };
+
+   #[export_name = "DriverEntry"] // WDF expects a symbol with the name DriverEntry
+   pub unsafe extern "system" fn driver_entry(
+      driver: &mut DRIVER_OBJECT,
+      registry_path: PCUNICODE_STRING,
+   ) -> NTSTATUS {
+      0
+   }
+   ```
+
+11. Add a `Makefile.toml`:
+   ```toml
+   extend = "target/rust-driver-makefile.toml"
+
+   [env]
+   CARGO_MAKE_EXTEND_WORKSPACE_MAKEFILE = true
+
+   [config]
+   load_script = '''
+   #!@rust
+   //! ```cargo
+   //! [dependencies]
+   //! wdk-build = "0.2.0"
+   //! ```
+   #![allow(unused_doc_comments)]
+
+   wdk_build::cargo_make::load_rust_driver_makefile()?
+   '''
+   ```
+
+12. Add an inx file that matches the name of your `cdylib` crate.
+
 ## Documentation
 
 `cargo doc --document-private-items --open`
@@ -56,6 +175,7 @@ From an EWDK development command prompt, run:
 `cargo make`
 
 If build is successful, this will stamp the INF and create a CAT file placed with driver binary and INF in `Package` folder.
+A signed driver package, including a `WDRLocalTestCert.cer` file, will be generated at `target/<Cargo profile>/package`. If a specific target architecture was specified, the driver package will be generated at `target/<target architecture>/<Cargo profile>/package`
 
 ### Install
 
