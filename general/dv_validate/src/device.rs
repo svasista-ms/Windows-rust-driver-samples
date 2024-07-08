@@ -1,61 +1,48 @@
 use wdk_sys::{
-    macros,
-    ULONG,
-    NTSTATUS,
-    WDFDRIVER,
-    ntddk::KeGetCurrentIrql,
-    PWDFDEVICE_INIT,
-    APC_LEVEL,
-    WDF_PNPPOWER_EVENT_CALLBACKS,
-    WDFDEVICE,
-    WDF_OBJECT_ATTRIBUTES,
-    _WDF_EXECUTION_LEVEL,
-    _WDF_SYNCHRONIZATION_SCOPE,
-    WDF_NO_HANDLE,
-    WDFDEVICE_INIT
+    macros, NTSTATUS, PCUNICODE_STRING, ULONG, UNICODE_STRING, WDFDEVICE, WDFDEVICE_INIT, WDF_NO_HANDLE, WDF_OBJECT_ATTRIBUTES, WDF_PNPPOWER_EVENT_CALLBACKS, _WDF_EXECUTION_LEVEL, _WDF_SYNCHRONIZATION_SCOPE
 };
 
-use wdk::{nt_success, println, paged_code};
+use wdk::{nt_success, println};
 
 use crate::{pnp_power_callbacks::*, GUID_DEVINTERFACE};
 
-// const DEVICE_NAME_BUFFER: [WCHAR; 17] = [
-//     '\\' as WCHAR, 'D' as WCHAR, 'e' as WCHAR, 'v' as WCHAR, 'i' as WCHAR, 'c' as WCHAR, 'e' as WCHAR,
-//     '\\' as WCHAR, 'V' as WCHAR, 'a' as WCHAR, 'l' as WCHAR, 'i' as WCHAR, 'd' as WCHAR, 'a' as WCHAR, 't' as WCHAR, 'e' as WCHAR, 
-//     0,
-// ];
-
-// // // Define a static UNICODE_STRING for "\\Device\\Validate".
-// // // Length is the length of the string in bytes, not including the null terminator.
-// // // MaximumLength includes the null terminator.
-// const DEVICE_NAME: UNICODE_STRING = UNICODE_STRING {
-//     Length: (16 * 2) as u16, // Length in bytes of the string content, excluding null terminator
-//     MaximumLength: (17 * 2) as u16, // Maximum length in bytes, including null terminator
-//     Buffer: DEVICE_NAME_BUFFER.as_ptr() as *mut WCHAR,
-// };
-
-
+extern crate alloc;
+use alloc::string::String;
 
 // EvtDeviceAdd - Called by the framework in response to AddDevice call from the PnP manager.
-// #[link_section = "PAGE"]
-pub extern "C" fn evt_device_add(_driver: WDFDRIVER, device_init: PWDFDEVICE_INIT) -> NTSTATUS {
-    // paged_code!();
+#[link_section = "PAGE"]
 
-    println!("Enter: EvtDeviceAdd");
 
-    let mut device_init = unsafe {
-        device_init.as_mut().expect("device_init is null. WDF should never provide a null pointer for device_init")
+pub fn device_create(mut device_init: &mut WDFDEVICE_INIT) -> NTSTATUS {
+    // WdfDeviceInitAssignName method assigns a device name to a device's device object.
+
+    let device_name_utf16: &[u16] = &[
+    'D' as u16, 'e' as u16, 'v' as u16, 'i' as u16, 'c' as u16, 'e' as u16, '0' as u16, '1' as u16, 0
+    ];
+
+    // Create the UNICODE_STRING
+    let pus: PCUNICODE_STRING = &UNICODE_STRING {
+        Length: (device_name_utf16.len() * 2) as u16 - 2, // Length in bytes, excluding null terminator
+        MaximumLength: (device_name_utf16.len() * 2) as u16, // Maximum length in bytes
+        Buffer: device_name_utf16.as_ptr() as *mut u16, // Pointer to the UTF-16 array
     };
 
-    // WdfDeviceInitAssignName method assigns a device name to a device's device object.
+    let device_name_string = String::from_utf16_lossy(device_name_utf16);
+
+    println!("Device Name: {:?}", device_name_string);
     
-    // let _nt_status = unsafe {
-    //     macros::call_unsafe_wdf_function_binding!(
-    //         WdfDeviceInitAssignName,
-    //         device_init,
-    //         &DEVICE_NAME
-    //     )
-    // };
+    let nt_status = unsafe {
+        macros::call_unsafe_wdf_function_binding!(
+            WdfDeviceInitAssignName,
+            device_init,
+            pus
+        )
+    };
+
+    if !nt_success(nt_status) {
+        println!("Error: WdfDeviceInitAssignName failed {nt_status:#010X}");
+        return nt_status;
+    }
 
     // Setup pnp/power callbacks
 
@@ -90,7 +77,20 @@ pub extern "C" fn evt_device_add(_driver: WDFDRIVER, device_init: PWDFDEVICE_INI
         )
     };
 
-    // todo!("WdfDeviceInitSetRequestAttributes");
+    let mut attributes = WDF_OBJECT_ATTRIBUTES {
+        Size: core::mem::size_of::<WDF_OBJECT_ATTRIBUTES>() as ULONG,
+        ExecutionLevel: _WDF_EXECUTION_LEVEL::WdfExecutionLevelInheritFromParent,
+        SynchronizationScope: _WDF_SYNCHRONIZATION_SCOPE::WdfSynchronizationScopeInheritFromParent,
+        ..WDF_OBJECT_ATTRIBUTES::default()
+    };
+
+    let [()] = [unsafe {
+        macros::call_unsafe_wdf_function_binding!(
+            WdfDeviceInitSetRequestAttributes,
+            device_init,
+            &mut attributes
+        );
+    }];
 
     let mut wdfdevice_object_attributes = WDF_OBJECT_ATTRIBUTES {
         Size: core::mem::size_of::<WDF_OBJECT_ATTRIBUTES>() as ULONG,
@@ -109,11 +109,7 @@ pub extern "C" fn evt_device_add(_driver: WDFDRIVER, device_init: PWDFDEVICE_INI
         )
     };
 
-    if !nt_success(nt_status) {
-        println!("Error: WdfDeviceCreate failed {nt_status:#010X}");
-        return nt_status;
-    }
-
+    println!("NT_STATUS: After WdfDeviceCreate {:#010X}", nt_status);
     nt_status = unsafe {
         macros::call_unsafe_wdf_function_binding!(
             WdfDeviceCreateDeviceInterface,
@@ -122,6 +118,8 @@ pub extern "C" fn evt_device_add(_driver: WDFDRIVER, device_init: PWDFDEVICE_INI
             core::ptr::null_mut(),
         )
     };
+
+    println!("NT_STATUS: After WdfDeviceCreateDeviceInterface {:#010X}", nt_status);
 
     if !nt_success(nt_status) {
         println!("Error: WdfDeviceCreateDeviceInterface failed {nt_status:#010X}");

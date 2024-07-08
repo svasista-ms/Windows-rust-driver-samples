@@ -2,7 +2,7 @@
 $sourceFolder = "C:\Users\svasista\Desktop\ENV\Windows-rust-driver-samples\target\debug\dv_validate_package"
 
 # Define the destination folder on the VM
-$destinationFolder = "C:\Users\User\Desktop\dv_validate_package"
+$destinationFolder = "C:\Users\User\Desktop\"
 
 # Create a PowerShell Direct session to the VM
 $vmName = "Windows 11 dev environment"

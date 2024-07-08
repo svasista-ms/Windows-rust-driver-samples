@@ -1,17 +1,29 @@
-#![no_std]
-#![cfg_attr(feature = "nightly", feature(hint_must_use))]
-#![deny(clippy::all)]
-#![warn(clippy::pedantic)]
-#![warn(clippy::nursery)]
-#![warn(clippy::cargo)]
-#![allow(clippy::missing_safety_doc)]
+#[cfg(not(test))]
+extern crate wdk_panic;
 
-use wdk_sys::GUID;
+use wdk::wdf;
+#[cfg(not(test))]
+use wdk_alloc::WDKAllocator;
+
+use wdk_sys::{
+    macros,
+    ntddk::KeGetCurrentIrql,
+    GUID,
+    NTSTATUS,
+    PVOID,
+    ULONG,
+    WDFOBJECT,
+    WDFREQUEST,
+    WDF_OBJECT_CONTEXT_TYPE_INFO,
+};
+use core::sync::atomic::AtomicI32;
+
+use wdf_object_context::{wdf_declare_context_type, wdf_declare_context_type_with_name};
 
 mod driver;
 mod device;
+mod wdf_object_context;
 mod pnp_power_callbacks;
-mod utils;
 
 pub const GUID_DEVINTERFACE: GUID = GUID {
     Data1: 0xA1B2_C3D4u32,
@@ -22,11 +34,29 @@ pub const GUID_DEVINTERFACE: GUID = GUID {
     ],
 };
 
-#[cfg(not(test))]
-#[global_allocator]
-static GLOBAL_ALLOCATOR: wdk_alloc::WDKAllocator = wdk_alloc::WDKAllocator;
+// Declare queue context.
+//
+// ====== CONTEXT SETUP ========//
 
-#[cfg(not(test))]
-extern crate wdk_panic;
+// The device context performs the same job as
+// a WDM device extension in the driver frameworks
+pub struct DeviceContext {
+    private_device_data: ULONG, // just a placeholder
+}
+wdf_declare_context_type!(DeviceContext);
 
+pub struct QueueContext {
+    buffer: PVOID,
+    length: usize,
+    timer: wdf::Timer,
+    current_request: WDFREQUEST,
+    current_status: NTSTATUS,
+    spin_lock: wdf::SpinLock,
+}
+wdf_declare_context_type_with_name!(QueueContext, queue_get_context);
+
+pub struct RequestContext {
+    cancel_completion_ownership_count: AtomicI32,
+}
+wdf_declare_context_type_with_name!(RequestContext, request_get_context);
 

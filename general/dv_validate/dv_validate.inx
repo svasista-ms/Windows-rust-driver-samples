@@ -22,7 +22,7 @@ dv_validate.sys = 1,,
 %StdMfg%=Standard,NT$ARCH$.10.0...16299
 
 [Standard.NT$ARCH$.10.0...16299]
-%DVV.DeviceDesc%=dvv_driver, root\sample
+%DVV.DeviceDesc%=dvv_driver, root\vdev
 
 [dvv_driver.NT$ARCH$]
 CopyFiles=Drivers_Dir

@@ -11,6 +11,7 @@ wdk.workspace = true
 wdk-alloc.workspace = true
 wdk-panic.workspace = true
 wdk-sys.workspace = true
+paste = "1.0.14"
 
 [build-dependencies]
 wdk-build.workspace = true
