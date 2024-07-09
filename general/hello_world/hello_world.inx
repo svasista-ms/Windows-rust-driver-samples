@@ -1,0 +1,58 @@
+[Version]
+Signature   ="$WINDOWS NT$"
+Class       =SoftwareComponent
+ClassGuid   ={5c4c3332-344d-483c-8739-259e934c9cc8}
+Provider    =%ProviderString%
+PnpLockDown =1 
+
+[DestinationDirs]
+DefaultDestDir = 13
+
+[SourceDisksNames]
+1 = %DiskId1%,,,""
+
+[SourceDisksFiles]
+hello_world.sys = 1,,
+
+; ================= Class section =====================
+
+[SampleClassReg]
+HKR,,,0,%ClassName%
+HKR,,Icon,,-5
+
+; ================= Install section =================
+
+[Manufacturer]
+%StdMfg%=Standard,NT$ARCH$.10.0...16299
+
+[Standard.NT$ARCH$.10.0...16299]
+%Hello_World.DeviceDesc%=hello_world_dvc, root\HELLO_WORLD_DVC
+
+[hello_world_dvc.NT$ARCH$]
+CopyFiles=Drivers_Dir
+
+[Drivers_Dir]
+hello_world.sys
+
+; ================= Service installation =================
+
+[hello_world_dvc.NT$ARCH$.Services]
+AddService = HELLO_WORLD_SVC, %SPSVCINST_ASSOCSERVICE%, HELLO_WORLD_SVC_INS
+
+[HELLO_WORLD_SVC_INS]
+DisplayName    = %Hello_World_Svc_Desc%
+ServiceType    = 1                  ; SERVICE_KERNEL_DRIVER
+StartType      = 3                  ; SERVICE_DEMAND_START
+ErrorControl   = 1                  ; SERVICE_ERROR_NORMAL
+ServiceBinary  = %13%\hello_world.sys
+
+; ================= Strings =================
+
+[Strings]
+SPSVCINST_ASSOCSERVICE          = 0x00000002
+ProviderString                  = "TODO Set Provider String"
+StdMfg                          = "(Standard system devices)"
+DiskId1                         = "Sample Hello World Driver Installation"
+Hello_World.DeviceDesc          = "Sample Hello World Driver in Rust"
+Hello_World_Svc_Desc            = "Hello World Driver written in Rust"
+ClassName                       = "Sample Hello World Device"
