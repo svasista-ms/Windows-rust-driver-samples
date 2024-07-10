@@ -221,6 +221,8 @@ A signed driver package, including a `WDRLocalTestCert.cer` file, will be genera
     1. Attach WinDBG
     2. `ed nt!Kd_DEFAULT_Mask 0xFFFFFFFF`
 
+* Refer [Setting Up KDNET Network Kernel Debugging](#setting-up-kdnet-network-kernel-debugging)
+
 ### Usage
 
 The echo driver can be tested by using the [included sample app](./general/echo/kmdf/exe).
@@ -254,6 +256,65 @@ Use the samples in this repo to guide your Windows driver development. Whether y
 For information about important changes that need to be made to the WDK sample drivers before releasing device drivers based on the sample code, see the following topic:
 
 [From Sample Code to Production Driver - What to Change in the Samples](https://docs.microsoft.com/en-us/windows-hardware/drivers/gettingstarted/from-sample-code-to-production-driver)
+
+#### Setting Up KDNET Network Kernel Debugging 
+
+   1. Determine the IP Address of the Host Computer
+
+      ```
+      ipconfig
+      ```
+
+   2. Test Connectivity between Host and the Target Computers
+
+      ```
+      ping <IPAddress>
+      ```
+
+      NOTE: Disable firewalls in the corresponding domain. You may also add the respective rules to establish connectivity between the host and the target computers
+
+   3. Choose a port for network debugging.
+      
+      You can choose any number from 49152 through 65535. The recommended range is 50000 - 50039.
+      
+      Execute the following commands on the target computer
+
+      ```
+      bcdedit /debug on
+
+      bcdedit /dbgsettings net hostip:w.x.y.z port:n
+      ```
+
+      Copy and save the key string that is generated after executing the above command
+
+   4. Start the debugging session
+
+      - On the host computer, open WinDbg. 
+      - On the File menu, select Kernel Debug. 
+      - In the Kernel Debugging dialog, open the Net tab. 
+      - Enter your port number and key. Select OK.
+
+      You can also start a session with WinDbg by opening a command prompt and entering the following command
+
+      ```
+      windbg -k net:port=<n>,key=<MyKey>
+      ```
+
+   5. Restart the Target PC
+
+      ```
+      shutdown -r -t 0
+      ```
+
+      When the target is restarted, the debugger in the host OS should connect.
+      
+      After connecting to the target on the host, hit break on your debugger and you can start debugging.
+
+   References - 
+
+   https://learn.microsoft.com/en-us/windows-hardware/drivers/debugger/setting-up-a-network-debugging-connection-automatically
+
+   https://learn.microsoft.com/en-us/windows-hardware/drivers/debugger/setting-up-a-network-debugging-connection
 
 ## Trademarks
 
