@@ -1,7 +1,7 @@
 [Version]
 Signature   ="$WINDOWS NT$"
-Class       =SoftwareComponent
-ClassGuid   ={5c4c3332-344d-483c-8739-259e934c9cc8}
+Class       =HelloWorldDevices
+ClassGuid   ={0F47A759-5D32-4616-B5A7-094A5738B5F7}
 Provider    =%ProviderString%
 PnpLockDown =1 
 
@@ -16,9 +16,12 @@ hello_world.sys = 1,,
 
 ; ================= Class section =====================
 
-[SampleClassReg]
-HKR,,,0,%ClassName%
-HKR,,Icon,,-5
+[ClassInstall32] 
+AddReg=hello_world_class_addreg
+
+[hello_world_class_addreg]
+HKR,,,,%ClassName%
+HKR,,Icon,,"-1"
 
 ; ================= Install section =================
 
@@ -55,4 +58,4 @@ StdMfg                          = "(Standard system devices)"
 DiskId1                         = "Sample Hello World Driver Installation"
 Hello_World.DeviceDesc          = "Sample Hello World Driver in Rust"
 Hello_World_Svc_Desc            = "Hello World Driver written in Rust"
-ClassName                       = "Sample Hello World Device"
+ClassName                       = "Hello World Devices"
