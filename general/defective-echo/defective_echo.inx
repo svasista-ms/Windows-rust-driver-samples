@@ -2,7 +2,7 @@
 ; Copyright (c)2023, Microsoft Corporation
 ;
 ;Module Name:
-;    ECHO_2.INF
+;    defective_echo.INF
 ;===================================================================
 
 [Version]
@@ -19,16 +19,7 @@ DefaultDestDir = 13
 1 = %DiskId1%,,,""
 
 [SourceDisksFiles]
-echo_2.sys  = 1,,
-
-; ================= Class section =====================
-
-;[ClassInstall32]
-;Addreg=SampleClassReg
-
-;[SampleClassReg]
-;HKR,,,0,%ClassName%
-;HKR,,Icon,,-5
+defective_echo.sys  = 1,,
 
 ; ================= Install section =================
 
@@ -36,31 +27,30 @@ echo_2.sys  = 1,,
 %StdMfg%=Standard,NT$ARCH$.10.0...16299
 
 [Standard.NT$ARCH$.10.0...16299]
-%ECHO.DeviceDesc%=ECHO_Device, root\ECHO_2
+%ECHO.DeviceDesc%=ECHO_Device, defective_echo
 
 [ECHO_Device.NT$ARCH$]
 CopyFiles=Drivers_Dir
 
 [Drivers_Dir]
-echo_2.sys
+defective_echo.sys
 
 ; ================= Service installation =================
 [ECHO_Device.NT$ARCH$.Services]
-AddService = ECHO_2, %SPSVCINST_ASSOCSERVICE%, ECHO_Service_Inst
+AddService = defective_echo, %SPSVCINST_ASSOCSERVICE%, defective_echo_svc_ins
 
-[ECHO_Service_Inst]
+[defective_echo_svc_ins]
 DisplayName    = %ECHO.SVCDESC%
 ServiceType    = 1               ; SERVICE_KERNEL_DRIVER
 StartType      = 3               ; SERVICE_DEMAND_START
 ErrorControl   = 1               ; SERVICE_ERROR_NORMAL
-ServiceBinary  = %13%\echo_2.sys
+ServiceBinary  = %13%\defective_echo.sys
 
 ; ================= Strings =================
 [Strings]
 SPSVCINST_ASSOCSERVICE = 0x00000002
-ProviderString         = "TODO-Set-Provider"
+ProviderString         = "Rust-Defective-Sample"
 StdMfg                 = "(Standard system devices)"
-DiskId1                = "WDF Sample ECHO Installation Disk #1 (DriverSync)"
-ECHO.DeviceDesc        = "Sample WDF ECHO Driver (DriverSync)"
-ECHO.SVCDESC           = "Sample WDF ECHO Service (DriverSync)"
-ClassName              = "Sample Device"
+DiskId1                = "WDF Defective Sample ECHO Installation Disk #1"
+ECHO.DeviceDesc        = "Defective Sample WDF ECHO Driver (DriverSync)"
+ECHO.SVCDESC           = "Defective Sample WDF ECHO Service (DriverSync)"

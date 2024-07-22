@@ -1,5 +1,5 @@
 [workspace]
-members = ["general/echo/kmdf/driver/*", "general/echo/kmdf/exe"]
+members = [ "general/defective-echo","general/echo/kmdf/driver/*", "general/echo/kmdf/exe"]
 resolver = "2"
 
 [workspace.package]
