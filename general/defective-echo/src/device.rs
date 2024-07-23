@@ -122,6 +122,8 @@ pub fn echo_device_create(mut device_init: &mut WDFDEVICE_INIT) -> NTSTATUS {
         return nt_status;
     }
 
+    // Allocate memory using WdfMemoryCreate
+
     nt_status = unsafe { echo_memory_create(device) };
 
     if !nt_success(nt_status) {

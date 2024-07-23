@@ -163,7 +163,7 @@ fn echo_print_driver_version() -> NTSTATUS {
             us.Length as usize / core::mem::size_of_val(&(*us.Buffer)),
         )
     });
-    println!("Echo Sample {driver_version}");
+    println!("Echo Defective Sample {driver_version}");
 
     let [()] = [unsafe {
         macros::call_unsafe_wdf_function_binding!(WdfObjectDelete, string as WDFOBJECT);
