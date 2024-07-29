@@ -9,7 +9,8 @@ use wdk_sys::{
 };
 
 use crate::{
-    memory::echo_memory_create, queue::echo_queue_initialize, queue_get_context,
+    // memory::echo_memory_create, 
+    queue::echo_queue_initialize, queue_get_context,
     wdf_object_context::wdf_get_context_type_info, wdf_object_get_device_context, KeGetCurrentIrql,
     GUID_DEVINTERFACE_ECHO, WDF_DEVICE_CONTEXT_TYPE_INFO, WDF_REQUEST_CONTEXT_TYPE_INFO,
 };
@@ -119,15 +120,6 @@ pub fn echo_device_create(mut device_init: &mut WDFDEVICE_INIT) -> NTSTATUS {
 
     if !nt_success(nt_status) {
         println!("Error: echo_queue_initialize failed {nt_status:#010X}");
-        return nt_status;
-    }
-
-    // Allocate memory using WdfMemoryCreate
-
-    nt_status = unsafe { echo_memory_create(device) };
-
-    if !nt_success(nt_status) {
-        println!("Error: echo_memory_create failed {nt_status:#010X}");
         return nt_status;
     }
 

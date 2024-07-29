@@ -38,7 +38,6 @@
 
 mod device;
 mod driver;
-mod memory;
 mod queue;
 
 #[cfg(not(test))]

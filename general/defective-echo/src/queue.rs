@@ -6,7 +6,7 @@ use core::sync::atomic::Ordering;
 use wdk::{nt_success, paged_code, println, wdf};
 use wdk_sys::{
     macros,
-    ntddk::{ExAllocatePool2, ExFreePool, KeGetCurrentIrql},
+    ntddk::{ExAllocatePool2, KeGetCurrentIrql},
     APC_LEVEL, NTSTATUS, POOL_FLAG_NON_PAGED, SIZE_T, STATUS_BUFFER_OVERFLOW, STATUS_CANCELLED,
     STATUS_INSUFFICIENT_RESOURCES, STATUS_INVALID_DEVICE_REQUEST, STATUS_SUCCESS, ULONG, WDFDEVICE,
     WDFMEMORY, WDFOBJECT, WDFQUEUE, WDFREQUEST, WDFTIMER, WDF_IO_QUEUE_CONFIG, WDF_NO_HANDLE,
@@ -148,7 +148,7 @@ pub unsafe fn echo_queue_initialize(device: WDFDEVICE) -> NTSTATUS {
         return nt_status;
     }
 
-    // Get our Driver Context memory from the returned Queue handle
+    // Get our Queue Context memory from the returned Queue handle
     let queue_context: *mut QueueContext = unsafe { queue_get_context(queue as WDFOBJECT) };
     unsafe {
         (*queue_context).buffer = core::ptr::null_mut();
@@ -208,20 +208,28 @@ pub unsafe fn echo_queue_initialize(device: WDFDEVICE) -> NTSTATUS {
 /// # Return value:
 ///
 /// * `VOID`
-extern "C" fn echo_evt_io_queue_context_destroy(object: WDFOBJECT) {
-    let queue_context = unsafe { queue_get_context(object) };
-    // Release any resources pointed to in the queue context.
+extern "C" fn echo_evt_io_queue_context_destroy(_object: WDFOBJECT) {
+    println!("Enter: echo_evt_io_queue_context_destroy called!");
+    
+    // Ideally we wound release any resources pointed to in the queue context.
     //
     // The body of the queue context will be released after
     // this callback handler returns
-
+    
     // If Queue context has an I/O buffer, release it
-    unsafe {
-        if !(*queue_context).buffer.is_null() {
-            ExFreePool((*queue_context).buffer);
-            (*queue_context).buffer = core::ptr::null_mut();
-        }
-    }
+    
+    // let queue_context = unsafe { queue_get_context(object) };
+    // unsafe {
+    //     if !(*queue_context).buffer.is_null() {
+    //         ExFreePool((*queue_context).buffer);
+    //         (*queue_context).buffer = core::ptr::null_mut();
+    //     }
+    // }
+    
+    // Injecting a fault to test the Driver Verifier behavior when the buffer is not freed
+    println!("FAULT: Not freeing buffer in echo_evt_io_queue_context_destroy");
+
+    println!("Exit: echo_evt_io_queue_context_destroy");
 }
 
 /// Decrements the cancel ownership count for the request.  When the count
@@ -541,11 +549,13 @@ extern "C" fn echo_evt_io_write(queue: WDFQUEUE, request: WDFREQUEST, length: us
 
     // Release previous buffer if set
     unsafe {
-        if !(*queue_context).buffer.is_null() {
-            ExFreePool((*queue_context).buffer);
-            (*queue_context).buffer = core::ptr::null_mut();
-            (*queue_context).length = 0;
-        }
+        println!("FAULT: Not freeing buffer in echo_evt_io_write");
+        // Ideally we should be releasing any previously allocated buffer
+        // if !(*queue_context).buffer.is_null() {
+        //     ExFreePool((*queue_context).buffer);
+        //     (*queue_context).buffer = core::ptr::null_mut();
+        //     (*queue_context).length = 0;
+        // }
 
         // FIXME: Memory Tag
         (*queue_context).buffer =
@@ -576,7 +586,8 @@ extern "C" fn echo_evt_io_write(queue: WDFQUEUE, request: WDFREQUEST, length: us
 
         if !nt_success(status) {
             println!("echo_evt_io_write WdfMemoryCopyToBuffer failed {status:#010X}");
-            ExFreePool((*queue_context).buffer);
+            println!("FAULT: Not freeing buffer in echo_evt_io_write when WdfMemoryCopyToBuffer failed");
+            // ExFreePool((*queue_context).buffer);
             (*queue_context).buffer = core::ptr::null_mut();
             (*queue_context).length = 0;
             let [()] = [macros::call_unsafe_wdf_function_binding!(
