@@ -35,7 +35,6 @@ When an application writes to a device managed by this driver, the driver create
         ```
 
 4. Copy the driver package, available under ".\target\debug\defective_echo_package" to the target system.
-    NOTE: You may modify the CopyDriverPackage.ps1 to copy the driver package to the target VM 
 
 5. Copy "devgen.exe" from host to the target system. Alternatively you may install WDK on the target system and add the directory that contains "devgen.exe" to PATH variable.
 
@@ -71,3 +70,9 @@ When an application writes to a device managed by this driver, the driver create
     ```
     The logs will be available in WinDbg
     run analyze v for detailed information
+
+References
+
+- https://learn.microsoft.com/en-us/windows-hardware/drivers/develop/how-to-test-a-driver-at-runtime-from-a-command-prompt
+- https://learn.microsoft.com/en-us/windows-hardware/drivers/taef/getting-started
+
