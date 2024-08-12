@@ -4,7 +4,7 @@
 use core::sync::atomic::Ordering;
 
 
-#[cfg(not(feature = "defects"))] 
+#[cfg(not(feature = "defect"))] 
 use wdk_sys::ntddk::ExFreePool; 
 
 use wdk::{nt_success, paged_code, println, wdf};
@@ -243,7 +243,7 @@ extern "C" fn echo_evt_io_queue_context_destroy(_object: WDFOBJECT) {
     // this callback handler returns
     
     // If Queue context has an I/O buffer, release it
-    #[cfg(not(feature = "defects"))] {
+    #[cfg(not(feature = "defect"))] {
         let queue_context = unsafe { queue_get_context(_object) };
         unsafe {
             if !(*queue_context).buffer.is_null() {
@@ -571,7 +571,7 @@ extern "C" fn echo_evt_io_write(queue: WDFQUEUE, request: WDFREQUEST, length: us
 
     // Release previous buffer if set
     unsafe {
-        #[cfg(not(feature = "defects"))] {
+        #[cfg(not(feature = "defect"))] {
             if !(*queue_context).buffer.is_null() {
                 ExFreePool((*queue_context).buffer);
                 (*queue_context).buffer = core::ptr::null_mut();
@@ -609,7 +609,7 @@ extern "C" fn echo_evt_io_write(queue: WDFQUEUE, request: WDFREQUEST, length: us
         if !nt_success(status) {
             println!("echo_evt_io_write WdfMemoryCopyToBuffer failed {status:#010X}");
             
-            #[cfg(not(feature = "defects"))] {
+            #[cfg(not(feature = "defect"))] {
                 ExFreePool((*queue_context).buffer);
             }
             
