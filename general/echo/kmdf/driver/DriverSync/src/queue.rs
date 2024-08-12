@@ -3,10 +3,14 @@
 
 use core::sync::atomic::Ordering;
 
+
+#[cfg(not(feature = "defects"))] 
+use wdk_sys::ntddk::ExFreePool; 
+
 use wdk::{nt_success, paged_code, println, wdf};
 use wdk_sys::{
     macros,
-    ntddk::{ExAllocatePool2, ExFreePool, KeGetCurrentIrql},
+    ntddk::{ExAllocatePool2, KeGetCurrentIrql},
     APC_LEVEL,
     NTSTATUS,
     POOL_FLAG_NON_PAGED,
@@ -232,18 +236,20 @@ pub unsafe fn echo_queue_initialize(device: WDFDEVICE) -> NTSTATUS {
 /// # Return value:
 ///
 /// * `VOID`
-extern "C" fn echo_evt_io_queue_context_destroy(object: WDFOBJECT) {
-    let queue_context = unsafe { queue_get_context(object) };
+extern "C" fn echo_evt_io_queue_context_destroy(_object: WDFOBJECT) {
     // Release any resources pointed to in the queue context.
     //
     // The body of the queue context will be released after
     // this callback handler returns
-
+    
     // If Queue context has an I/O buffer, release it
-    unsafe {
-        if !(*queue_context).buffer.is_null() {
-            ExFreePool((*queue_context).buffer);
-            (*queue_context).buffer = core::ptr::null_mut();
+    #[cfg(not(feature = "defects"))] {
+        let queue_context = unsafe { queue_get_context(_object) };
+        unsafe {
+            if !(*queue_context).buffer.is_null() {
+                ExFreePool((*queue_context).buffer);
+                (*queue_context).buffer = core::ptr::null_mut();
+            }
         }
     }
 }
@@ -565,10 +571,12 @@ extern "C" fn echo_evt_io_write(queue: WDFQUEUE, request: WDFREQUEST, length: us
 
     // Release previous buffer if set
     unsafe {
-        if !(*queue_context).buffer.is_null() {
-            ExFreePool((*queue_context).buffer);
-            (*queue_context).buffer = core::ptr::null_mut();
-            (*queue_context).length = 0;
+        #[cfg(not(feature = "defects"))] {
+            if !(*queue_context).buffer.is_null() {
+                ExFreePool((*queue_context).buffer);
+                (*queue_context).buffer = core::ptr::null_mut();
+                (*queue_context).length = 0;
+            }
         }
 
         // FIXME: Memory Tag
@@ -600,9 +608,14 @@ extern "C" fn echo_evt_io_write(queue: WDFQUEUE, request: WDFREQUEST, length: us
 
         if !nt_success(status) {
             println!("echo_evt_io_write WdfMemoryCopyToBuffer failed {status:#010X}");
-            ExFreePool((*queue_context).buffer);
+            
+            #[cfg(not(feature = "defects"))] {
+                ExFreePool((*queue_context).buffer);
+            }
+            
             (*queue_context).buffer = core::ptr::null_mut();
             (*queue_context).length = 0;
+            
             let [()] = [macros::call_unsafe_wdf_function_binding!(
                 WdfRequestComplete,
                 request,

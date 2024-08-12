@@ -26,3 +26,6 @@ features = [
   "Win32_System_WindowsProgramming",
   "Win32_System_Threading",
 ]
+
+[features]
+defect = []
