@@ -64,7 +64,7 @@ When an application writes to a device managed by this driver, the driver create
     TE.exe .\Devfund_CHAOS_WLK_Certification.dll /P:"DQ=DeviceID='ROOT\DEVGEN\{A0ED791E-417E-0644-BD2E-85F05BA10567}'" --rebootResumeOption:Manual
     ```
 
-10. WDTF_PNP: EDTSurpriseRemoveDevice() test will fail. The target system shows a Blue Screen Error with the following error - 
+10. WDTF_PNP: EDTSurpriseRemoveDevice() test will fail. The target system shows a Blue Screen with the following error - 
     ```
     DRIVER_VERIFIER_DETECTED_VIOLATION (c4)
     ```
