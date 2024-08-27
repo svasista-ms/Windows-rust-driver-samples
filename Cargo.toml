@@ -17,8 +17,9 @@ panic = "abort"
 lto = true
 
 [workspace.dependencies]
-wdk = "0.2.0"
-wdk-alloc = "0.2.0"
-wdk-build = "0.2.0"
-wdk-panic = "0.2.0"
-wdk-sys = "0.2.0"
+wdk = { git = "https://github.com/microsoft/windows-drivers-rs.git" }
+wdk-alloc = { git = "https://github.com/microsoft/windows-drivers-rs.git" }
+wdk-build = { git = "https://github.com/microsoft/windows-drivers-rs.git" }
+wdk-panic = { git = "https://github.com/microsoft/windows-drivers-rs.git" }
+wdk-sys = { git = "https://github.com/microsoft/windows-drivers-rs.git" }
+

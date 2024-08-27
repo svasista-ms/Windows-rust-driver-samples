@@ -7,8 +7,8 @@
 
 [Version]
 Signature   = "$WINDOWS NT$"
-Class       = Sample
-ClassGuid   = {78A1C341-4539-11d3-B88D-00C04FAD5171}
+Class       = SoftwareComponent
+ClassGuid   = {5c4c3332-344d-483c-8739-259e934c9cc8}
 Provider    = %ProviderString%
 PnpLockDown = 1
 
@@ -20,15 +20,6 @@ DefaultDestDir = 13
 
 [SourceDisksFiles]
 echo_2.sys  = 1,,
-
-; ================= Class section =====================
-
-[ClassInstall32]
-Addreg=SampleClassReg
-
-[SampleClassReg]
-HKR,,,0,%ClassName%
-HKR,,Icon,,-5
 
 ; ================= Install section =================
 

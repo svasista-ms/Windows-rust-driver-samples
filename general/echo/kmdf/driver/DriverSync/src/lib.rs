@@ -45,9 +45,9 @@ extern crate wdk_panic;
 
 use wdk::wdf;
 #[cfg(not(test))]
-use wdk_alloc::WDKAllocator;
+use wdk_alloc::WdkAllocator;
 use wdk_sys::{
-    macros,
+    call_unsafe_wdf_function_binding,
     ntddk::KeGetCurrentIrql,
     GUID,
     NTSTATUS,
@@ -64,7 +64,7 @@ use wdf_object_context::{wdf_declare_context_type, wdf_declare_context_type_with
 
 #[cfg(not(test))]
 #[global_allocator]
-static GLOBAL_ALLOCATOR: WDKAllocator = WDKAllocator;
+static GLOBAL_ALLOCATOR: WdkAllocator = WdkAllocator;
 
 // {CDC35B6E-0BE4-4936-BF5F-5537380A7C1A}
 const GUID_DEVINTERFACE_ECHO: GUID = GUID {
