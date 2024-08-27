@@ -1,0 +1,32 @@
+[package]
+name = "echo_irql_violation"
+version = "0.1.0"
+edition.workspace = true
+publish.workspace = true
+repository.workspace = true
+license.workspace = true
+
+[lib]
+crate-type = ["cdylib"]
+test = false
+
+[package.metadata.wdk.driver-model]
+driver-type = "KMDF"
+umdf-version-major = 1
+target-umdf-version-minor = 33
+
+[dependencies]
+wdk.workspace = true
+wdk-alloc.workspace = true
+wdk-panic.workspace = true
+wdk-sys.workspace = true
+
+[build-dependencies]
+wdk-build.workspace = true
+
+[profile.dev]
+panic = "abort"
+lto = true
+
+[profile.release]
+panic = "abort"
