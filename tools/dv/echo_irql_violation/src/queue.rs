@@ -6,14 +6,13 @@ use core::sync::atomic::Ordering;
 use wdk::{nt_success, paged_code, println, wdf};
 use wdk_sys::{
     macros,
-    ntddk::{ExAllocatePool2, ExFreePool, KeGetCurrentIrql},
+    ntddk::{ExAllocatePool2, ExFreePool, KeGetCurrentIrql, KeEnterCriticalRegion},
     APC_LEVEL, NTSTATUS, POOL_FLAG_NON_PAGED, SIZE_T, STATUS_BUFFER_OVERFLOW, STATUS_CANCELLED,
     STATUS_INSUFFICIENT_RESOURCES, STATUS_INVALID_DEVICE_REQUEST, STATUS_SUCCESS, ULONG, WDFDEVICE,
     WDFMEMORY, WDFOBJECT, WDFQUEUE, WDFREQUEST, WDFTIMER, WDF_IO_QUEUE_CONFIG, WDF_NO_HANDLE,
     WDF_OBJECT_ATTRIBUTES, WDF_TIMER_CONFIG, _WDF_EXECUTION_LEVEL, _WDF_IO_QUEUE_DISPATCH_TYPE,
     _WDF_SYNCHRONIZATION_SCOPE, _WDF_TRI_STATE,
 };
-
 use crate::{
     queue_get_context, request_get_context, wdf_object_context::wdf_get_context_type_info,
     AtomicI32, QueueContext, RequestContext, WDF_QUEUE_CONTEXT_TYPE_INFO,
@@ -33,8 +32,8 @@ const TIMER_PERIOD: u32 = 1000 * 10;
 ///
 /// # Arguments:
 ///
-/// * `target` - the  value that will be pontetially incrmented
-/// * `floor` - the value in which the Target value must be greater then if it
+/// * `target` - the  value that will be potentially incrmented
+/// * `floor` - the value in which the Target value must be greater than if it
 ///   is to be incremented
 ///
 /// # Return value:
@@ -59,7 +58,7 @@ fn echo_interlocked_increment_floor(target: &AtomicI32, floor: i32) -> i32 {
             Ordering::SeqCst,
         ) {
             // If oldValue == currentValue, then no one updated Target in between
-            // the deref at the top and the InterlockecCompareExchange afterward
+            // the deref at the top and the InterlockedCompareExchange afterward
             // and we have successfully incremented the value and can exit the loop.
             Ok(_) => break,
             Err(v) => current_value = v,
@@ -283,7 +282,9 @@ extern "C" fn echo_evt_request_cancel(request: WDFREQUEST) {
 
     // This book keeping is synchronized by the common
     // Queue presentation lock which we are now acquiring
-    unsafe { (*queue_context).spin_lock.acquire() };
+    unsafe { 
+        (*queue_context).spin_lock.acquire() 
+    }
 
     let complete_request: bool = echo_decrement_request_cancel_ownership_count(request_context);
 
@@ -336,6 +337,10 @@ fn echo_set_current_request(request: WDFREQUEST, queue: WDFQUEUE) {
 
     // Defer the completion to another thread from the timer dpc
     unsafe { (*queue_context).spin_lock.acquire() };
+
+    unsafe {
+        KeEnterCriticalRegion();
+    }
     unsafe {
         (*queue_context).current_request = request;
         (*queue_context).current_status = STATUS_SUCCESS;

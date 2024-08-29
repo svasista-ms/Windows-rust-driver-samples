@@ -221,6 +221,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "echo-irql-violation"
+version = "0.1.0"
+dependencies = [
+ "paste",
+ "wdk",
+ "wdk-alloc",
+ "wdk-build",
+ "wdk-panic",
+ "wdk-sys",
+]
+
+[[package]]
 name = "echoapp"
 version = "0.1.0"
 dependencies = [

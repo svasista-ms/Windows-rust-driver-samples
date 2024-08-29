@@ -2,7 +2,7 @@
 ; Copyright (c)2023, Microsoft Corporation
 ;
 ;Module Name:
-;    ECHO_2.INF
+;    echo_irql_violation.INF
 ;===================================================================
 
 [Version]
@@ -19,13 +19,7 @@ DefaultDestDir = 13
 1 = %DiskId1%,,,""
 
 [SourceDisksFiles]
-echo_2.sys  = 1,,
-
-; ================= Class section =====================
-
-[SampleClassReg]
-HKR,,,0,%ClassName%
-HKR,,Icon,,-5
+echo_irql_violation.sys  = 1,,
 
 ; ================= Install section =================
 
@@ -33,24 +27,24 @@ HKR,,Icon,,-5
 %StdMfg%=Standard,NT$ARCH$.10.0...16299
 
 [Standard.NT$ARCH$.10.0...16299]
-%ECHO.DeviceDesc%=ECHO_Device, root\ECHO_2
+%ECHO.DeviceDesc%=ECHO_Device, root\echo_irql_violation
 
 [ECHO_Device.NT$ARCH$]
 CopyFiles=Drivers_Dir
 
 [Drivers_Dir]
-echo_2.sys
+echo_irql_violation.sys
 
 ; ================= Service installation =================
 [ECHO_Device.NT$ARCH$.Services]
-AddService = ECHO_2, %SPSVCINST_ASSOCSERVICE%, ECHO_Service_Inst
+AddService = echo_irql_violation, %SPSVCINST_ASSOCSERVICE%, ECHO_Service_Inst
 
 [ECHO_Service_Inst]
 DisplayName    = %ECHO.SVCDESC%
 ServiceType    = 1               ; SERVICE_KERNEL_DRIVER
 StartType      = 3               ; SERVICE_DEMAND_START
 ErrorControl   = 1               ; SERVICE_ERROR_NORMAL
-ServiceBinary  = %13%\echo_2.sys
+ServiceBinary  = %13%\echo_irql_violation.sys
 
 ; ================= Strings =================
 [Strings]
@@ -58,6 +52,6 @@ SPSVCINST_ASSOCSERVICE = 0x00000002
 ProviderString         = "TODO-Set-Provider"
 StdMfg                 = "(Standard system devices)"
 DiskId1                = "WDF Sample ECHO Installation Disk #1 (DriverSync)"
-ECHO.DeviceDesc        = "Sample WDF ECHO Driver (DriverSync)"
-ECHO.SVCDESC           = "Sample WDF ECHO Service (DriverSync)"
+ECHO.DeviceDesc        = "Sample WDF ECHO Driver (DriverSync) with IRQL Violation"
+ECHO.SVCDESC           = "Sample WDF ECHO Service (DriverSync) with IRQL Violation"
 ClassName              = "Sample Device"
