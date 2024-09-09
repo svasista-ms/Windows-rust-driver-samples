@@ -1,4 +1,4 @@
-extend = "target/rust-driver-makefile.toml"
+extend = [ { path = "target/rust-driver-makefile.toml" }, { path = "target/rust-driver-sample-makefile.toml" } ]
 
 [env]
 CARGO_MAKE_EXTEND_WORKSPACE_MAKEFILE = true
@@ -9,11 +9,12 @@ load_script = '''
 #!@rust
 //! ```cargo
 //! [dependencies]
-//! wdk-build = "0.2.0"
+//! wdk-build = { git = "https://github.com/svasista-ms/windows-drivers-rs.git", branch = "move-infverif-latest" }
 //! ```
 #![allow(unused_doc_comments)]
 
-wdk_build::cargo_make::load_rust_driver_makefile()?
+wdk_build::cargo_make::load_rust_driver_makefile()?;
+wdk_build::cargo_make::load_rust_driver_sample_makefile()?;
 '''
 
 [tasks.default]

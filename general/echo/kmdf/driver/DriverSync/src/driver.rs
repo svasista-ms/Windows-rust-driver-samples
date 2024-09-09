@@ -18,6 +18,8 @@ use wdk_sys::{
     WDF_DRIVER_CONFIG,
     WDF_DRIVER_VERSION_AVAILABLE_PARAMS,
     WDF_NO_HANDLE,
+    WDF_NO_OBJECT_ATTRIBUTES,
+    WDFOBJECT
 };
 
 use crate::device;
@@ -61,7 +63,7 @@ extern "system" fn driver_entry(
     let nt_status = unsafe {
         call_unsafe_wdf_function_binding!(
             WdfDriverCreate,
-            driver as PDRIVER_OBJECT,
+            driver,
             registry_path,
             WDF_NO_OBJECT_ATTRIBUTES,
             &mut driver_config,
