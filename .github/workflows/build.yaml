@@ -72,6 +72,7 @@ jobs:
             Write-Host "Installing ${{ matrix.wdk }}..."
             Install-WinGetPackage -Id ${{ matrix.wdk }} -Source winget -MatchOption Equals -Mode Silent -Force
           }
+          Write-Output "Version_Number=10.0.22621.0" >> $env:GITHUB_ENV
 
       - name: Install Rust Toolchain (${{ matrix.rust_toolchain }})
         uses: dtolnay/rust-toolchain@master
